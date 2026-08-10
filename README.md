@@ -461,9 +461,17 @@ Variáveis de ambiente na API (Render):
 | `SEMENTE` | `1` | Popula o banco com anúncios de exemplo na primeira subida (só se estiver vazio), para a vitrine não aparecer vazia. |
 | `PORT` | _(automático)_ | O Render injeta; o servidor a lê de `process.env.PORT`. |
 
-Links da aplicação em produção:
+### Links da aplicação em produção
 
-<!-- TODO Lauan: cole aqui as duas URLs depois do deploy. -->
+| | Endereço |
+| --- | --- |
+| **Aplicação (PWA)** | <!-- TODO Lauan: cole a URL de PRODUÇÃO do Vercel, sem o hash --> |
+| **API** | https://vortex-z6wf.onrender.com |
 
-- **Frontend:** `https://...vercel.app`
-- **API:** `https://...onrender.com/api/health`
+A raiz da API responde com um índice dos endpoints disponíveis. Para conferir
+que ela está no ar: [`/api/health`](https://vortex-z6wf.onrender.com/api/health).
+
+> **Nota sobre o primeiro acesso.** A API está no plano gratuito do Render, que
+> suspende o serviço após alguns minutos sem tráfego. A primeira requisição
+> depois de um período ocioso pode levar cerca de 40 segundos enquanto o
+> serviço volta; as seguintes respondem normalmente.
