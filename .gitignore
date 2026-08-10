@@ -1,0 +1,21 @@
+# Dependências
+node_modules/
+
+# Build do frontend
+dist/
+
+# Banco de dados local — cada máquina gera o seu com `node popular-banco.mjs`
+*.db
+*.db-journal
+
+# Variáveis de ambiente
+.env
+.env.*
+!.env.example
+
+# Editor e sistema operacional
+.vscode/
+.idea/
+.DS_Store
+Thumbs.db
+*.log

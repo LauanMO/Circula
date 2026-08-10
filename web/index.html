@@ -1,0 +1,29 @@
+<!doctype html>
+<html lang="pt-BR">
+  <head>
+    <meta charset="UTF-8" />
+    <!-- viewport-fit=cover para o app ocupar a tela toda em celulares com notch -->
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+
+    <title>Circula — Marketplace de Economia Circular do Campus</title>
+    <meta
+      name="description"
+      content="Plataforma de desapego universitário: doe ou venda livros, jalecos, calculadoras e móveis para quem está começando a faculdade."
+    />
+
+    <!-- Sem o manifesto o navegador não oferece a instalação na tela inicial. -->
+    <link rel="manifest" href="/manifest.json" />
+
+    <!-- Pinta a barra de status do Android com a cor do app. -->
+    <meta name="theme-color" content="#15803d" />
+
+    <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+    <link rel="apple-touch-icon" href="/icone-192.png" />
+    <meta name="apple-mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-title" content="Circula" />
+  </head>
+  <body>
+    <div id="root"></div>
+    <script type="module" src="/src/main.tsx"></script>
+  </body>
+</html>

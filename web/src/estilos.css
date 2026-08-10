@@ -1,0 +1,724 @@
+/* ==========================================================================
+   Circula — folha de estilo única.
+
+   A organização segue a ordem em que as coisas aparecem na tela: variáveis,
+   base, layout, cabeçalho, navegação, hero, cards, formulário e, no fim, as
+   media queries que transformam o layout de desktop em aplicativo mobile.
+   ========================================================================== */
+
+:root {
+  --fundo: #f5f8f6;
+  --superficie: #ffffff;
+  --superficie-2: #eef3f0;
+  --texto: #13201a;
+  --texto-suave: #5d6e66;
+  --primaria: #15803d;
+  --primaria-escura: #0f6330;
+  --primaria-clara: #dcfce7;
+  --borda: #e0e8e3;
+  --erro: #b91c1c;
+  --erro-clara: #fef2f2;
+
+  --raio: 14px;
+  --raio-p: 9px;
+  --sombra: 0 1px 2px rgb(19 32 26 / 6%), 0 10px 28px rgb(19 32 26 / 6%);
+
+  /* Altura da barra de navegação do mobile. Usada também para reservar
+     espaço no fim da página, para o conteúdo não ficar escondido atrás. */
+  --altura-nav-mobile: 62px;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+html {
+  scroll-behavior: smooth;
+}
+
+body {
+  margin: 0;
+  background: var(--fundo);
+  color: var(--texto);
+  font-family: system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
+  line-height: 1.6;
+  -webkit-font-smoothing: antialiased;
+}
+
+h1,
+h2,
+h3 {
+  line-height: 1.2;
+  margin: 0;
+  letter-spacing: -0.02em;
+}
+
+p {
+  margin: 0;
+}
+
+button {
+  font: inherit;
+  cursor: pointer;
+}
+
+/* Foco visível apenas para quem navega pelo teclado. */
+:focus-visible {
+  outline: 2px solid var(--primaria);
+  outline-offset: 2px;
+}
+
+/* --------------------------------------------------------- layout geral */
+
+.app {
+  min-height: 100dvh;
+  display: flex;
+  flex-direction: column;
+}
+
+.conteudo {
+  flex: 1;
+  width: 100%;
+  max-width: 1160px;
+  margin: 0 auto;
+  padding: 0 24px;
+}
+
+.secao {
+  padding: 44px 0;
+}
+
+.secao--estreita {
+  max-width: 620px;
+  margin: 0 auto;
+}
+
+.secao__cabecalho {
+  margin-bottom: 22px;
+}
+
+.secao__cabecalho h2 {
+  font-size: 1.6rem;
+}
+
+.secao__cabecalho p {
+  color: var(--texto-suave);
+  margin-top: 4px;
+}
+
+/* ------------------------------------------------------------ cabeçalho */
+
+.cabecalho {
+  position: sticky;
+  top: 0;
+  z-index: 10;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  padding: 14px 24px;
+  background: rgb(255 255 255 / 82%);
+  backdrop-filter: blur(10px);
+  border-bottom: 1px solid var(--borda);
+}
+
+.marca {
+  display: inline-flex;
+  align-items: center;
+  gap: 9px;
+  border: 0;
+  background: none;
+  padding: 0;
+  color: var(--primaria);
+  font-size: 1.22rem;
+  font-weight: 700;
+  letter-spacing: -0.02em;
+}
+
+.marca__icone {
+  width: 25px;
+  height: 25px;
+}
+
+.navDesktop {
+  display: flex;
+  gap: 4px;
+}
+
+.navDesktop__item {
+  border: 0;
+  background: none;
+  padding: 8px 14px;
+  border-radius: 999px;
+  color: var(--texto-suave);
+  font-weight: 500;
+  transition: background 0.16s, color 0.16s;
+}
+
+.navDesktop__item:hover {
+  background: var(--superficie-2);
+  color: var(--texto);
+}
+
+.navDesktop__item.ativo {
+  background: var(--primaria-clara);
+  color: var(--primaria-escura);
+  font-weight: 600;
+}
+
+/* ------------------------------------------------- navegação do celular */
+
+/* Escondida por padrão; a media query no fim do arquivo a exibe. */
+.navMobile {
+  display: none;
+}
+
+/* ----------------------------------------------------------------- hero */
+
+.hero {
+  padding: 68px 0 52px;
+}
+
+.hero__conteudo {
+  max-width: 720px;
+}
+
+.hero__etiqueta {
+  display: inline-block;
+  padding: 5px 13px;
+  border-radius: 999px;
+  background: var(--primaria-clara);
+  color: var(--primaria-escura);
+  font-size: 0.83rem;
+  font-weight: 600;
+  margin-bottom: 18px;
+}
+
+.hero__titulo {
+  font-size: clamp(2rem, 5vw, 3.1rem);
+  font-weight: 700;
+}
+
+.hero__texto {
+  margin-top: 18px;
+  font-size: 1.09rem;
+  color: var(--texto-suave);
+  max-width: 610px;
+}
+
+.hero__acoes {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+  margin-top: 30px;
+}
+
+/* -------------------------------------------------------------- botões */
+
+.botao {
+  border: 1px solid transparent;
+  border-radius: var(--raio-p);
+  padding: 12px 22px;
+  font-weight: 600;
+  transition: background 0.16s, border-color 0.16s, transform 0.1s;
+}
+
+.botao:active {
+  transform: translateY(1px);
+}
+
+.botao--primario {
+  background: var(--primaria);
+  color: #fff;
+}
+
+.botao--primario:hover {
+  background: var(--primaria-escura);
+}
+
+.botao--primario:disabled {
+  background: var(--texto-suave);
+  cursor: progress;
+}
+
+.botao--secundario {
+  background: var(--superficie);
+  border-color: var(--borda);
+  color: var(--texto);
+}
+
+.botao--secundario:hover {
+  border-color: var(--primaria);
+  color: var(--primaria-escura);
+}
+
+.botao--largo {
+  width: 100%;
+}
+
+.botaoIcone {
+  display: inline-flex;
+  border: 1px solid var(--borda);
+  background: var(--superficie);
+  border-radius: 8px;
+  padding: 6px;
+  color: var(--texto-suave);
+  transition: color 0.16s, border-color 0.16s, background 0.16s;
+}
+
+.botaoIcone:hover:not(:disabled) {
+  color: var(--erro);
+  border-color: var(--erro);
+  background: var(--erro-clara);
+}
+
+.botaoIcone:disabled {
+  opacity: 0.5;
+  cursor: progress;
+}
+
+.linkBotao {
+  align-self: flex-start;
+  border: 0;
+  background: none;
+  padding: 0;
+  margin-top: 7px;
+  color: var(--primaria);
+  font-size: 0.85rem;
+  text-decoration: underline;
+  text-underline-offset: 3px;
+}
+
+/* ----------------------------------------------------------- estatísticas */
+
+.numeros {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 14px;
+  padding: 22px;
+  background: var(--superficie);
+  border: 1px solid var(--borda);
+  border-radius: var(--raio);
+  box-shadow: var(--sombra);
+}
+
+.numero {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+}
+
+.numero strong {
+  font-size: 1.9rem;
+  color: var(--primaria);
+  line-height: 1.15;
+}
+
+.numero span {
+  font-size: 0.84rem;
+  color: var(--texto-suave);
+}
+
+/* --------------------------------------------------------------- filtros */
+
+.filtros {
+  display: flex;
+  gap: 8px;
+  margin-bottom: 22px;
+  overflow-x: auto;
+  padding-bottom: 4px;
+  /* Some com a barra de rolagem horizontal, que no mobile fica feia. */
+  scrollbar-width: none;
+}
+
+.filtros::-webkit-scrollbar {
+  display: none;
+}
+
+.chip {
+  flex: 0 0 auto;
+  border: 1px solid var(--borda);
+  background: var(--superficie);
+  border-radius: 999px;
+  padding: 7px 15px;
+  font-size: 0.9rem;
+  color: var(--texto-suave);
+  transition: background 0.16s, color 0.16s, border-color 0.16s;
+}
+
+.chip:hover {
+  border-color: var(--primaria);
+}
+
+.chip.ativo {
+  background: var(--primaria);
+  border-color: var(--primaria);
+  color: #fff;
+  font-weight: 600;
+}
+
+/* ----------------------------------------------------------------- cards */
+
+.grade {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(258px, 1fr));
+  gap: 18px;
+}
+
+.card {
+  display: flex;
+  flex-direction: column;
+  background: var(--superficie);
+  border: 1px solid var(--borda);
+  border-radius: var(--raio);
+  overflow: hidden;
+  box-shadow: var(--sombra);
+  transition: transform 0.18s, box-shadow 0.18s, opacity 0.18s;
+  animation: surgir 0.28s ease-out both;
+}
+
+.card:hover {
+  transform: translateY(-3px);
+  box-shadow: 0 2px 4px rgb(19 32 26 / 8%), 0 16px 34px rgb(19 32 26 / 10%);
+}
+
+/* Enquanto a exclusão está em andamento o card já responde visualmente. */
+.card--saindo {
+  opacity: 0.45;
+  pointer-events: none;
+}
+
+@keyframes surgir {
+  from {
+    opacity: 0;
+    transform: translateY(8px);
+  }
+}
+
+.card__imagem {
+  position: relative;
+  aspect-ratio: 4 / 3;
+  background: var(--superficie-2);
+}
+
+.card__imagem img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+}
+
+.card__semImagem {
+  display: grid;
+  place-items: center;
+  height: 100%;
+  font-size: 2.4rem;
+  font-weight: 700;
+  color: var(--borda);
+}
+
+.selo {
+  position: absolute;
+  left: 10px;
+  bottom: 10px;
+  padding: 5px 11px;
+  border-radius: 999px;
+  font-size: 0.83rem;
+  font-weight: 700;
+  backdrop-filter: blur(4px);
+}
+
+.selo--doacao {
+  background: var(--primaria);
+  color: #fff;
+}
+
+.selo--venda {
+  background: rgb(255 255 255 / 94%);
+  color: var(--texto);
+}
+
+.card__corpo {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  padding: 14px 15px 12px;
+  flex: 1;
+}
+
+.card__categoria {
+  font-size: 0.74rem;
+  font-weight: 700;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  color: var(--primaria);
+}
+
+.card__titulo {
+  font-size: 1.02rem;
+  font-weight: 600;
+}
+
+.card__descricao {
+  font-size: 0.9rem;
+  color: var(--texto-suave);
+  /* Corta a descrição em duas linhas para todos os cards ficarem alinhados. */
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
+.card__rodape {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-top: auto;
+  padding-top: 10px;
+  font-size: 0.8rem;
+  color: var(--texto-suave);
+}
+
+/* ------------------------------------------------ carregando / avisos */
+
+.esqueleto {
+  height: 292px;
+  border-radius: var(--raio);
+  background: linear-gradient(100deg, var(--superficie-2) 30%, #f7faf8 50%, var(--superficie-2) 70%);
+  background-size: 220% 100%;
+  animation: brilho 1.2s infinite linear;
+}
+
+@keyframes brilho {
+  to {
+    background-position: -220% 0;
+  }
+}
+
+.aviso {
+  padding: 26px;
+  border: 1px dashed var(--borda);
+  border-radius: var(--raio);
+  text-align: center;
+  color: var(--texto-suave);
+}
+
+.aviso--erro {
+  border-style: solid;
+  border-color: var(--erro);
+  background: var(--erro-clara);
+  color: var(--erro);
+  text-align: left;
+  padding: 13px 16px;
+}
+
+/* ------------------------------------------------------------ formulário */
+
+.formulario {
+  display: flex;
+  flex-direction: column;
+  gap: 17px;
+  padding: 24px;
+  background: var(--superficie);
+  border: 1px solid var(--borda);
+  border-radius: var(--raio);
+  box-shadow: var(--sombra);
+}
+
+.campo {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.campo__rotulo {
+  font-size: 0.89rem;
+  font-weight: 600;
+}
+
+.campo input,
+.campo textarea,
+.campo select {
+  font: inherit;
+  color: inherit;
+  padding: 11px 13px;
+  border: 1px solid var(--borda);
+  border-radius: var(--raio-p);
+  background: var(--fundo);
+  transition: border-color 0.16s, background 0.16s;
+  width: 100%;
+}
+
+.campo textarea {
+  resize: vertical;
+}
+
+.campo input:focus,
+.campo textarea:focus,
+.campo select:focus {
+  outline: none;
+  border-color: var(--primaria);
+  background: var(--superficie);
+}
+
+.campo--comErro input,
+.campo--comErro textarea,
+.campo--comErro select {
+  border-color: var(--erro);
+  background: var(--erro-clara);
+}
+
+.campo__erro {
+  font-size: 0.83rem;
+  color: var(--erro);
+}
+
+.opcoes {
+  display: flex;
+  gap: 10px;
+  border: 0;
+  padding: 0;
+  margin: 0;
+}
+
+.opcoes legend {
+  font-size: 0.89rem;
+  font-weight: 600;
+  margin-bottom: 8px;
+  padding: 0;
+}
+
+.opcao {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  padding: 11px;
+  border: 1px solid var(--borda);
+  border-radius: var(--raio-p);
+  background: var(--fundo);
+  font-weight: 500;
+  cursor: pointer;
+  transition: border-color 0.16s, background 0.16s, color 0.16s;
+}
+
+.opcao.ativo {
+  border-color: var(--primaria);
+  background: var(--primaria-clara);
+  color: var(--primaria-escura);
+  font-weight: 600;
+}
+
+.opcao input {
+  accent-color: var(--primaria);
+}
+
+/* ---------------------------------------------------------------- rodapé */
+
+.rodape {
+  padding: 30px 0 40px;
+  border-top: 1px solid var(--borda);
+  color: var(--texto-suave);
+  font-size: 0.88rem;
+  text-align: center;
+}
+
+/* ==========================================================================
+   MOBILE — abaixo de 860px a Landing Page vira aplicativo.
+
+   O menu do topo some e dá lugar a uma barra fixa no rodapé, o conteúdo
+   passa a ocupar a largura toda e a grade vira coluna única.
+   ========================================================================== */
+
+@media (max-width: 860px) {
+  .conteudo {
+    padding: 0 16px;
+    /* Espaço para o conteúdo não terminar embaixo da barra de navegação,
+       somado à área segura de celulares com barra de gestos. */
+    padding-bottom: calc(var(--altura-nav-mobile) + env(safe-area-inset-bottom) + 16px);
+  }
+
+  .navDesktop {
+    display: none;
+  }
+
+  .navMobile {
+    display: flex;
+    position: fixed;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    z-index: 20;
+    background: rgb(255 255 255 / 94%);
+    backdrop-filter: blur(12px);
+    border-top: 1px solid var(--borda);
+    padding-bottom: env(safe-area-inset-bottom);
+  }
+
+  .navMobile__item {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 3px;
+    height: var(--altura-nav-mobile);
+    border: 0;
+    background: none;
+    color: var(--texto-suave);
+    font-size: 0.7rem;
+    font-weight: 500;
+    transition: color 0.16s;
+  }
+
+  .navMobile__item.ativo {
+    color: var(--primaria);
+    font-weight: 700;
+  }
+
+  .hero {
+    padding: 34px 0 26px;
+  }
+
+  .hero__texto {
+    font-size: 1rem;
+  }
+
+  .hero__acoes .botao {
+    flex: 1;
+  }
+
+  .numeros {
+    grid-template-columns: repeat(2, 1fr);
+    gap: 18px 10px;
+  }
+
+  .numero strong {
+    font-size: 1.6rem;
+  }
+
+  .secao {
+    padding: 30px 0;
+  }
+
+  .grade {
+    grid-template-columns: 1fr;
+  }
+
+  .formulario {
+    padding: 18px;
+  }
+}
+
+/* Respeita quem pediu menos animação no sistema operacional. */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+}
