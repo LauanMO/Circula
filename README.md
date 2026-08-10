@@ -23,6 +23,10 @@ nativo no celular.
 - [Estrutura do projeto](#estrutura-do-projeto)
 - [Decisões de arquitetura](#decisões-de-arquitetura)
 - [Diário de Bordo da IA](#diário-de-bordo-da-ia)
+- [Segurança](#segurança)
+- [Deploy](#deploy)
+
+**A aplicação no ar:** https://vortexlm.vercel.app
 
 ---
 
@@ -114,14 +118,20 @@ cd api
 node testar-rotas.mjs
 ```
 
-Exercita as 16 rotas e casos de erro em sequência e imprime o resultado de cada
-um. O script limpa do banco os registros que ele mesmo cria.
+Exercita as rotas e os casos de erro em sequência — 19 verificações no total,
+incluindo três que garantem que o `usuarioId` nunca aparece numa resposta
+(ver [Segurança](#segurança)). O script limpa do banco os registros que ele
+mesmo cria.
 
 ---
 
 ## Rotas da API
 
 Todas as respostas são JSON. Prefixo: `/api`.
+
+A raiz do servidor (`GET /`) fica fora do prefixo e devolve um índice dos
+endpoints — abrir a URL da API no navegador mostra o que existe, em vez de um
+404.
 
 | Método | Rota | Descrição |
 | --- | --- | --- |
@@ -217,8 +227,10 @@ Vortex/
 │   │   ├── server.ts         Sobe o Fastify, CORS, log e tratamento de erros
 │   │   ├── rotas.ts          Endpoints REST e validação com Zod
 │   │   ├── db.ts             Todo o SQL do projeto
+│   │   ├── seed.ts           Anúncios de exemplo para a primeira subida
 │   │   └── tipos.ts          Tipos e categorias compartilhados
-│   ├── popular-banco.mjs     Insere anúncios de exemplo
+│   ├── .node-version         Fixa o Node 24 no deploy
+│   ├── popular-banco.mjs     Insere anúncios de exemplo (uso local)
 │   └── testar-rotas.mjs      Teste de fumaça das rotas
 │
 └── web/                      Frontend — React + PWA
@@ -231,8 +243,11 @@ Vortex/
     │   ├── api.ts            Toda a comunicação com o backend
     │   ├── useAnuncios.ts    Hook de listagem (carregando / erro / dados)
     │   ├── usuario.ts        Identificação local do usuário
+    │   ├── formato.ts        Formatação de preço e data
+    │   ├── estilos.css       Folha de estilo única, com as media queries
     │   ├── telas/            Início, Anunciar, Meus anúncios
     │   └── componentes/      Vitrine e CardAnuncio
+    ├── vercel.json           Repassa /api para a API publicada
     └── gerar-icones.mjs      Desenha os ícones do PWA por código
 ```
 
@@ -265,10 +280,14 @@ um campo no frontend não é garantia de nada.
 **Navegação por estado, sem biblioteca de rotas.** São três telas. Uma
 dependência a mais renderia URLs bonitas e pouco mais do que isso.
 
-**Service Worker escrito à mão, com duas estratégias.** Arquivos estáticos usam
-*cache primeiro* (resposta instantânea). Respostas da API usam *rede primeiro
-com cache de reserva*, que é o que permite continuar exibindo os anúncios já
-carregados quando o celular perde a conexão.
+**Service Worker escrito à mão, com três estratégias.** Os arquivos em
+`/assets/` usam *cache primeiro*: o Vite põe um hash no nome, então quando o
+conteúdo muda o nome muda junto e o que está em cache nunca fica errado. O
+`index.html` usa *rede primeiro*, porque ele **não** tem hash e é quem aponta
+qual bundle carregar — servi-lo do cache prenderia o usuário numa versão antiga
+do app para sempre. E as respostas da API usam *rede primeiro com cache de
+reserva*, que é o que permite continuar exibindo os anúncios já carregados
+quando o celular perde a conexão.
 
 ---
 
@@ -368,14 +387,24 @@ remendo em cada rota) e travá-la com testes de regressão.
 
 ### 3. Compartilhamento de histórico
 
-<!-- TODO Lauan: cole aqui o link público da conversa. É opcional pelo edital,
-     mas está marcado como "recomendado" e reforça a comprovação de autoria. -->
+O trabalho foi feito pelo **Claude Code**, que roda no terminal e atua sobre os
+arquivos do repositório em vez de numa janela de chat no navegador. Por isso não
+existe um link público de conversa para compartilhar: o histórico fica na
+máquina, e o que ele produziu está registrado no próprio repositório.
 
-_A preencher._
+O rastro verificável dessa colaboração é o **histórico de commits**, que mostra a
+ordem real em que o projeto foi construído — a API antes do frontend, o PWA
+depois, e as correções de segurança e de cache no fim, já com o resto
+funcionando.
+
+<!-- Se quiser anexar um link de conversa (ChatGPT/Claude web), cole aqui. -->
+
+Os quatro prompts da seção anterior estão reproduzidos exatamente como foram
+escritos, com os erros de digitação preservados.
 
 ### 4. Reflexão crítica — quando a IA errou
 
-Três erros concretos, todos corrigidos por observação e não por sorte:
+Quatro erros concretos, todos corrigidos por observação e não por sorte:
 
 **O erro de CSS que emendou duas palavras.** O título da Landing Page usava um
 `<br />` para equilibrar as duas linhas no desktop. No celular a quebra ficava
@@ -402,7 +431,21 @@ inserido. Hoje o script limpa tudo o que cria.
 andamento e cuspia um `Assertion failed ... uv_handle` do libuv no terminal.
 Trocado por `process.exitCode = 0`, deixando o Node encerrar naturalmente.
 
-O padrão comum aos três: a IA acertou o objetivo e errou o efeito colateral.
+**O cache que prendia o app numa versão antiga.** Este foi o mais sério, e só
+apareceu no teste final. O Service Worker guardava o `index.html` com estratégia
+*cache primeiro*, igual aos outros arquivos estáticos. O problema é que os
+arquivos de `/assets/` têm um hash no nome — quando mudam de conteúdo, mudam de
+nome — mas o `index.html` não. Como é ele que aponta qual bundle carregar,
+servi-lo do cache significava que **nenhuma versão nova do app jamais chegaria a
+quem já tinha visitado o site**.
+
+Comprovei comparando as duas pontas: o servidor entregava `index-C6hgmfPZ.js`, e
+o navegador insistia em carregar `index-BpmNXD6w.js`, de uma build anterior. A
+correção foi passar o HTML para *rede primeiro* e manter *cache primeiro* apenas
+no que é imutável. **Lição:** cachear tudo do mesmo jeito é o caminho mais curto
+para publicar uma correção que ninguém recebe.
+
+O padrão comum aos quatro: a IA acertou o objetivo e errou o efeito colateral.
 Nenhum foi pego lendo o código — todos apareceram ao **rodar e olhar o
 resultado**.
 
@@ -465,7 +508,7 @@ Variáveis de ambiente na API (Render):
 
 | | Endereço |
 | --- | --- |
-| **Aplicação (PWA)** | <!-- TODO Lauan: cole a URL de PRODUÇÃO do Vercel, sem o hash --> |
+| **Aplicação (PWA)** | https://vortexlm.vercel.app |
 | **API** | https://vortex-z6wf.onrender.com |
 
 A raiz da API responde com um índice dos endpoints disponíveis. Para conferir
