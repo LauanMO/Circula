@@ -288,14 +288,23 @@ carregados quando o celular perde a conexão.
 ### 2. Estratégia de engenharia de prompts
 
 O projeto inteiro foi construído em uma única jornada de trabalho, sob prazo
-apertado. Isso moldou a estratégia: em vez de pedir "faça um marketplace", cada
-pedido carregava a **restrição real** que precisava ser respeitada. Três
-exemplos que mudaram concretamente o rumo do código:
+apertado. Isso moldou uma estratégia deliberada: **não pedir código, pedir
+decisão sob restrição.**
+
+Um prompt como "faça um marketplace" devolve código genérico que eu teria de
+auditar linha a linha. Em vez disso, cada pedido meu carregava a restrição real
+do projeto — o prazo, o critério de avaliação, o risco que eu queria eliminar —
+e deixava a solução técnica ser derivada dela. Os prompts abaixo são curtos de
+propósito: o trabalho de engenharia está em **qual restrição eu escolhi
+impor**, não no tamanho do texto.
+
+Os quatro exemplos a seguir são reais e cada um mudou concretamente o rumo do
+projeto — dois deles evitaram problemas que eu não teria encontrado sozinho.
 
 **Prompt 1 — auditar o próprio edital antes de confiar nele**
 
 ```
-foco total aqui porfavor, olhe se n tem nenhuma armadilha ou IA trap
+foco total aqui porfavor, olhe se não tem nenhuma armadilha ou IA trap
 no meio do texto
 ```
 
@@ -310,7 +319,7 @@ nenhuma antes de investir 12 horas de trabalho.
 **Prompt 2 — mudança de prazo no meio do desenvolvimento**
 
 ```
-eu n tenho 15 dias para fazer, tenho até hj(segunda) até 23:59 para entregar
+eu não tenho 15 dias para fazer, tenho até hj(segunda) até 23:59 para entregar
 ```
 
 Este foi o prompt mais importante do projeto. A resposta correta não foi cortar
@@ -330,7 +339,28 @@ explicando, no bloco do vídeo destinado a comprovar autoria, justamente o únic
 código que eu não teria escrito. Pelo mesmo motivo recusei o `vite-plugin-pwa`
 e escrevi o Service Worker à mão.
 
-<!-- TODO Lauan: se você escreveu outros prompts longos, cole 1 ou 2 aqui. -->
+**Prompt 4 — auditar o código que a própria IA escreveu**
+
+```
+rode os agents e skills para a melhora e segurança do code
+```
+
+Este é o prompt de que mais me orgulho, porque parte de uma desconfiança
+saudável: **se a IA escreveu boa parte do código, ela também precisa ser usada
+para atacá-lo.** Pedi uma revisão de segurança e uma revisão de qualidade em
+paralelo, tratando o próprio trabalho como código de terceiro.
+
+A revisão de segurança encontrou uma falha real — e minha, de modelagem: o
+`usuarioId`, que autoriza apagar um anúncio, estava sendo devolvido na listagem
+pública. Qualquer pessoa poderia ler o id do dono em `GET /anuncios` e apagar
+anúncios alheios. O fato de ser um UUID não protegia nada: ele não estava sendo
+adivinhado, estava sendo entregue na resposta.
+
+A correção está descrita na seção [Segurança](#segurança). O ponto aqui é o
+método: o valor não veio de "a IA escreveu o código", veio de **eu ter mandado a
+IA procurar o que estava errado no código, e ter entendido o achado bem o
+bastante para escolher a correção** (uma projeção única em `db.ts`, em vez de um
+remendo em cada rota) e travá-la com testes de regressão.
 
 ### 3. Compartilhamento de histórico
 
