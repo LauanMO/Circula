@@ -4,18 +4,24 @@
 // aplicação e a rede. Toda requisição do app passa por ele antes de sair — e
 // é isso que permite responder mesmo sem internet.
 //
-// São dois caches, com estratégias diferentes, porque o que eles guardam tem
-// naturezas diferentes:
+// São dois caches e três estratégias, porque o que guardamos tem naturezas
+// diferentes:
 //
-//   CACHE_APP   → HTML, JS, CSS e ícones. Mudam só quando publicamos uma
-//                 versão nova, então valem cache primeiro (resposta instantânea).
+//   Arquivos de /assets/ → cache primeiro. O Vite coloca um hash no nome
+//                 (index-A1B2C3.js): se o conteúdo muda, o nome muda. Então o
+//                 que está em cache nunca fica errado — é seguro servir na hora.
 //
-//   CACHE_DADOS → respostas de /api. Mudam a toda hora, então vale rede
-//                 primeiro, caindo no cache apenas quando a rede falha. É o
-//                 que faz o app continuar exibindo os anúncios já vistos
-//                 quando o celular está offline.
+//   HTML (navegação) → rede primeiro. O index.html NÃO tem hash no nome, e é
+//                 ele que aponta para qual bundle carregar. Se ele fosse cache
+//                 primeiro, o usuário ficaria preso numa versão antiga do app
+//                 para sempre, mesmo depois de publicarmos uma nova. Buscamos
+//                 sempre o mais recente e usamos o cache só quando não há rede.
+//
+//   Respostas de /api → rede primeiro. Os dados mudam a toda hora; o cache
+//                 serve de reserva para o app continuar exibindo os anúncios já
+//                 vistos quando o celular está offline.
 
-const VERSAO = 'v1';
+const VERSAO = 'v2';
 const CACHE_APP = `circula-app-${VERSAO}`;
 const CACHE_DADOS = `circula-dados-${VERSAO}`;
 
@@ -73,8 +79,15 @@ self.addEventListener('fetch', (evento) => {
   if (url.origin !== self.location.origin) return;
 
   if (url.pathname.startsWith('/api/')) {
-    evento.respondWith(redePrimeiro(requisicao));
+    // Dados: sempre o mais fresco, cache como reserva offline.
+    evento.respondWith(redePrimeiro(requisicao, CACHE_DADOS));
+  } else if (requisicao.mode === 'navigate') {
+    // Abrir uma página. É o HTML que decide qual bundle carregar, então ele
+    // precisa vir da rede sempre que possível — senão uma versão nova do app
+    // nunca chegaria em quem já visitou o site.
+    evento.respondWith(redePrimeiro(requisicao, CACHE_APP));
   } else {
+    // JS, CSS e ícones: nome com hash, conteúdo imutável, pode servir do cache.
     evento.respondWith(cachePrimeiro(requisicao));
   }
 });
@@ -82,11 +95,14 @@ self.addEventListener('fetch', (evento) => {
 /**
  * Rede primeiro, cache como rede de segurança.
  *
- * Usada nos dados: o usuário sempre vê a informação mais recente quando tem
- * conexão, e continua vendo a última versão conhecida quando não tem.
+ * Usada nos dados e no HTML: com conexão o usuário sempre vê a versão mais
+ * recente; sem conexão, continua vendo a última que ficou guardada.
+ *
+ * Recebe o cache a usar porque atende dois casos com destinos diferentes —
+ * as respostas da API vão para o cache de dados, o HTML vai para o do app.
  */
-async function redePrimeiro(requisicao) {
-  const cache = await caches.open(CACHE_DADOS);
+async function redePrimeiro(requisicao, nomeDoCache) {
+  const cache = await caches.open(nomeDoCache);
 
   try {
     const resposta = await fetch(requisicao);
@@ -103,8 +119,15 @@ async function redePrimeiro(requisicao) {
 
     if (guardada) return guardada;
 
-    // Nunca esteve online nesta rota: devolvemos um JSON de erro, e não um
-    // HTML de erro do navegador, para o frontend saber interpretar.
+    // Offline pedindo uma página que nunca visitamos: devolvemos o index.html.
+    // O React assume dali e a navegação interna continua funcionando.
+    if (requisicao.mode === 'navigate') {
+      const inicio = await caches.match('/index.html');
+      if (inicio) return inicio;
+    }
+
+    // Offline numa rota de API que nunca carregou: devolvemos JSON de erro, e
+    // não um HTML do navegador, para o frontend saber interpretar.
     return new Response(
       JSON.stringify({ erro: 'Você está offline e estes dados ainda não foram carregados.' }),
       { status: 503, headers: { 'Content-Type': 'application/json' } },
@@ -115,8 +138,10 @@ async function redePrimeiro(requisicao) {
 /**
  * Cache primeiro, rede como complemento.
  *
- * Usada nos arquivos estáticos: se já temos, respondemos na hora. Se não,
- * buscamos e guardamos para a próxima.
+ * Usada nos arquivos com hash no nome (JS, CSS) e nos ícones: se já temos,
+ * respondemos na hora, sem tocar a rede. Se não, buscamos e guardamos para a
+ * próxima. É seguro porque esses arquivos são imutáveis — quando o conteúdo
+ * muda, o nome muda junto.
  */
 async function cachePrimeiro(requisicao) {
   const guardada = await caches.match(requisicao);
@@ -133,13 +158,7 @@ async function cachePrimeiro(requisicao) {
 
     return resposta;
   } catch {
-    // Offline pedindo uma página: devolvemos o index.html do cache. O React
-    // assume dali e a navegação interna continua funcionando.
-    if (requisicao.mode === 'navigate') {
-      const inicio = await caches.match('/index.html');
-      if (inicio) return inicio;
-    }
-
+    // Offline e nunca baixamos este arquivo: não há o que devolver.
     return Response.error();
   }
 }

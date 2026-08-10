@@ -17,6 +17,23 @@ await app.register(cors, { origin: true });
 
 await app.register(rotasAnuncios, { prefix: '/api' });
 
+// Todas as rotas de verdade vivem sob /api. Abrir a raiz do servidor no
+// navegador é o reflexo natural de quem recebe a URL, então em vez de um 404
+// ela devolve um índice do que existe — a API se apresenta sozinha.
+app.get('/', async () => ({
+  nome: 'Circula — API',
+  descricao: 'Marketplace de economia circular do campus universitário.',
+  documentacao: 'https://github.com/LauanMO/Vortex',
+  rotas: {
+    'GET /api/health': 'Sonda de saúde do servidor',
+    'GET /api/estatisticas': 'Números agregados dos anúncios',
+    'GET /api/anuncios': 'Lista anúncios (filtros: categoria, usuarioId, limite)',
+    'GET /api/anuncios/:id': 'Busca um anúncio pelo id',
+    'POST /api/anuncios': 'Cria um anúncio',
+    'DELETE /api/anuncios/:id': 'Remove um anúncio do próprio usuário',
+  },
+}));
+
 // Log enxuto de uma linha por requisição. Mais legível que o log padrão em
 // JSON quando se está acompanhando o terminal.
 app.addHook('onResponse', async (requisicao, resposta) => {

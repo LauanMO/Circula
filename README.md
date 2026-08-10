@@ -280,10 +280,14 @@ carregados quando o celular perde a conexão.
 
 | Ferramenta | Como foi usada |
 | --- | --- |
-| **Claude (Anthropic)** | Ferramenta principal. Discussão de arquitetura, escrita da maior parte do código, depuração e revisão. |
+| **Claude (Anthropic)** | Única ferramenta de IA usada no projeto, via Claude Code no terminal. Discussão de arquitetura, escrita da maior parte do código, depuração, revisão de segurança e revisão de qualidade. |
 
-<!-- TODO Lauan: acrescente aqui qualquer outra ferramenta que você usou
-     (ChatGPT, GitHub Copilot, v0, Lovable...) e remova esta linha. -->
+Optei por concentrar o trabalho em uma ferramenta só. Alternar entre várias
+significaria reexplicar o contexto do projeto a cada troca — e, num prazo de um
+dia, esse retrabalho custaria mais do que qualquer ganho. Como o Claude Code
+roda no terminal e enxerga os arquivos do repositório, ele mantinha o contexto
+entre uma tarefa e outra, o que permitiu pedidos curtos e diretos como os da
+seção seguinte.
 
 ### 2. Estratégia de engenharia de prompts
 
