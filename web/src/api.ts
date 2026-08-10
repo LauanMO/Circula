@@ -4,7 +4,7 @@
 // mantém o tratamento de erro em um lugar só e deixa os componentes cuidando
 // apenas da tela.
 
-import type { Anuncio, Categoria, DetalheErro, Estatisticas } from './tipos.ts';
+import type { Anuncio, Categoria, DetalheErro, Estatisticas, NovoAnuncio } from './tipos.ts';
 
 // Em desenvolvimento fica vazio e o Vite faz o proxy de /api para a porta
 // 3333. Em produção, VITE_API_URL aponta para a API publicada.
@@ -57,11 +57,16 @@ async function requisitar<T>(caminho: string, opcoes: RequestInit = {}): Promise
   return resposta.json() as Promise<T>;
 }
 
-export function listarAnuncios(filtros: {
+// Os filtros aceitos pela listagem. Exportado porque o hook useAnuncios
+// recebe exatamente a mesma forma — declará-la aqui, num lugar só, evita que
+// os dois saiam de sincronia quando um filtro for adicionado.
+export type FiltrosAnuncio = {
   categoria?: Categoria;
   usuarioId?: string;
   limite?: number;
-} = {}): Promise<Anuncio[]> {
+};
+
+export function listarAnuncios(filtros: FiltrosAnuncio = {}): Promise<Anuncio[]> {
   const parametros = new URLSearchParams();
 
   if (filtros.categoria) parametros.set('categoria', filtros.categoria);
@@ -73,7 +78,7 @@ export function listarAnuncios(filtros: {
   return requisitar<Anuncio[]>(`/anuncios${query ? `?${query}` : ''}`);
 }
 
-export function criarAnuncio(dados: Omit<Anuncio, 'id' | 'criadoEm'>): Promise<Anuncio> {
+export function criarAnuncio(dados: NovoAnuncio): Promise<Anuncio> {
   return requisitar<Anuncio>('/anuncios', {
     method: 'POST',
     body: JSON.stringify(dados),

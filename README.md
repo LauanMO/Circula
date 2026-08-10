@@ -374,6 +374,37 @@ resultado**.
 
 ---
 
+## Segurança
+
+Antes de fechar o projeto, passei uma revisão de segurança focada no código.
+As bases já estavam sólidas por construção: **todo SQL é parametrizado** (nenhum
+valor de usuário entra na string da query), **toda entrada passa por validação
+Zod** antes de tocar o banco, e o React escapa a saída — não há
+`dangerouslySetInnerHTML` nem `eval` em lugar nenhum.
+
+A revisão encontrou **uma falha real** que vale registrar, porque é sutil:
+
+**Controle de acesso quebrado (IDOR) na exclusão de anúncios.** O `usuarioId` é
+o que autoriza apagar um anúncio (o `DELETE` confere `WHERE id = ? AND
+usuarioId = ?`). O problema: esse mesmo `usuarioId` estava sendo **devolvido na
+listagem pública**. Ou seja, qualquer um podia chamar `GET /anuncios`, ler o
+`usuarioId` do dono de cada anúncio e então apagar anúncios alheios passando
+aquele id no `DELETE`. O fato de o id ser um UUID não protegia nada — ele não
+estava sendo adivinhado, estava sendo entregue na resposta.
+
+A correção foi tratar o `usuarioId` como um segredo que **nunca sai do
+servidor**: ele continua no banco e só trafega do cliente para a API (ao criar
+ou apagar), nunca de volta. Centralizei isso na camada de dados (`db.ts`), com
+o tipo `AnuncioPublico = Omit<Anuncio, 'usuarioId'>` garantindo em tempo de
+compilação que nenhuma rota devolva o campo. Há testes de regressão em
+`testar-rotas.mjs` que falham se o `usuarioId` voltar a aparecer em qualquer
+resposta.
+
+Como próximo passo natural, o modelo de identificação por id daria lugar a
+autenticação real (JWT), listada como bônus no edital.
+
+---
+
 ## Deploy
 
 <!-- TODO Lauan: se fizer o deploy, cole os links aqui. É bônus no edital. -->

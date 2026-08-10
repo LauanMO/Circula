@@ -3,10 +3,26 @@
 // Toda entrada que vem do cliente passa antes pelo zod. A regra aqui é
 // simples: nada chega no banco sem ter sido validado.
 
-import type { FastifyInstance } from 'fastify';
+import type { FastifyInstance, FastifyReply } from 'fastify';
 import { z } from 'zod';
 import * as banco from './db.ts';
 import { CATEGORIAS } from './tipos.ts';
+
+// O usuarioId identifica quem publica e quem pode apagar. A mesma regra
+// (string não-vazia, sem espaços nas pontas) vale nas três rotas que o
+// recebem, então ela é definida uma vez e reaproveitada.
+const usuarioId = z.string().trim().min(1, 'Usuário não identificado');
+
+// Transforma um erro do Zod na resposta 400 padrão da API: uma mensagem geral
+// mais a lista de campos que falharam, cada um com a sua mensagem. É esse
+// formato de `detalhes` que o formulário do frontend usa para destacar o
+// input exato que deu errado.
+function erroDeValidacao(resposta: FastifyReply, mensagem: string, erro: z.ZodError) {
+  return resposta.status(400).send({
+    erro: mensagem,
+    detalhes: erro.issues.map((i) => ({ campo: i.path.join('.'), mensagem: i.message })),
+  });
+}
 
 // Formato aceito para criar um anúncio. As mensagens estão em português
 // porque elas são exibidas direto no formulário do frontend.
@@ -29,7 +45,7 @@ const novoAnuncio = z
       .string()
       .trim()
       .regex(/^https?:\/\/.+/, 'Informe uma URL de imagem começando com http'),
-    usuarioId: z.string().trim().min(1, 'Usuário não identificado'),
+    usuarioId,
   })
   // Uma venda sem preço não faz sentido. Esta checagem cruza dois campos, por
   // isso ela mora em um refine e não na definição de um campo isolado.
@@ -40,7 +56,7 @@ const novoAnuncio = z
 
 const filtros = z.object({
   categoria: z.enum(CATEGORIAS).optional(),
-  usuarioId: z.string().trim().min(1).optional(),
+  usuarioId: usuarioId.optional(),
   limite: z.coerce.number().int().positive().max(100).optional(),
 });
 
@@ -57,13 +73,7 @@ export async function rotasAnuncios(app: FastifyInstance) {
     const resultado = filtros.safeParse(requisicao.query);
 
     if (!resultado.success) {
-      return resposta.status(400).send({
-        erro: 'Filtros inválidos',
-        detalhes: resultado.error.issues.map((i) => ({
-          campo: i.path.join('.'),
-          mensagem: i.message,
-        })),
-      });
+      return erroDeValidacao(resposta, 'Filtros inválidos', resultado.error);
     }
 
     return banco.listar(resultado.data);
@@ -83,16 +93,8 @@ export async function rotasAnuncios(app: FastifyInstance) {
   app.post('/anuncios', async (requisicao, resposta) => {
     const resultado = novoAnuncio.safeParse(requisicao.body);
 
-    // 400 com a lista de campos que falharam, para o formulário conseguir
-    // apontar o erro exatamente no campo certo.
     if (!resultado.success) {
-      return resposta.status(400).send({
-        erro: 'Dados inválidos',
-        detalhes: resultado.error.issues.map((i) => ({
-          campo: i.path.join('.'),
-          mensagem: i.message,
-        })),
-      });
+      return erroDeValidacao(resposta, 'Dados inválidos', resultado.error);
     }
 
     const dados = resultado.data;
@@ -115,9 +117,7 @@ export async function rotasAnuncios(app: FastifyInstance) {
   // ninguém apague o anúncio de outra pessoa.
   app.delete('/anuncios/:id', async (requisicao, resposta) => {
     const { id } = requisicao.params as { id: string };
-    const corpo = z
-      .object({ usuarioId: z.string().trim().min(1) })
-      .safeParse(requisicao.body);
+    const corpo = z.object({ usuarioId }).safeParse(requisicao.body);
 
     if (!corpo.success) {
       return resposta.status(400).send({ erro: 'Informe o usuarioId' });

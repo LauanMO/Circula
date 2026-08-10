@@ -8,7 +8,7 @@
 // dependência externa nem compilação nativa envolvida.
 
 import { DatabaseSync } from 'node:sqlite';
-import type { Anuncio, Categoria } from './tipos.ts';
+import type { Anuncio, AnuncioPublico, Categoria } from './tipos.ts';
 
 const ARQUIVO_BANCO = process.env.BANCO ?? 'dados.db';
 
@@ -30,9 +30,32 @@ db.exec(`
   )
 `);
 
+// Statements com SQL fixo são preparados uma vez, aqui, e reusados a cada
+// chamada. Preparar compila o SQL; refazer isso a toda requisição seria repetir
+// esse trabalho no caminho quente. Só `listar` fica de fora: o WHERE dele é
+// montado conforme os filtros, então o SQL varia e é preparado na hora.
+const stmtBuscarPorId = db.prepare('SELECT * FROM anuncios WHERE id = ?');
+const stmtInserir = db.prepare(
+  `INSERT INTO anuncios (id, titulo, descricao, categoria, tipo, preco, imagemUrl, usuarioId, criadoEm)
+   VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+);
+const stmtRemover = db.prepare('DELETE FROM anuncios WHERE id = ? AND usuarioId = ?');
+const stmtEstatisticas = db.prepare(
+  `SELECT
+     COUNT(*)                                         AS totalAnuncios,
+     SUM(CASE WHEN tipo = 'doacao' THEN 1 ELSE 0 END) AS totalDoacoes,
+     SUM(CASE WHEN tipo = 'venda'  THEN 1 ELSE 0 END) AS totalVendas,
+     COUNT(DISTINCT categoria)                        AS categoriasAtivas
+   FROM anuncios`,
+);
+
 // O SQLite devolve objetos sem prototype. Convertemos para um objeto comum e
 // tipado antes de entregar para o resto da aplicação.
-function paraAnuncio(linha: Record<string, unknown>): Anuncio {
+//
+// De propósito, o `usuarioId` NÃO é copiado para cá: tudo que passa por esta
+// função vira uma resposta ao cliente, e o usuarioId nunca pode vazar (ver a
+// nota em AnuncioPublico). Ele continua no banco; só não sai daqui.
+function paraAnuncio(linha: Record<string, unknown>): AnuncioPublico {
   return {
     id: linha.id as string,
     titulo: linha.titulo as string,
@@ -41,7 +64,6 @@ function paraAnuncio(linha: Record<string, unknown>): Anuncio {
     tipo: linha.tipo as Anuncio['tipo'],
     preco: linha.preco === null ? null : Number(linha.preco),
     imagemUrl: linha.imagemUrl as string,
-    usuarioId: linha.usuarioId as string,
     criadoEm: linha.criadoEm as string,
   };
 }
@@ -59,7 +81,7 @@ export type FiltroListagem = {
  * array e só depois unidas com AND — assim os valores nunca entram na string
  * do SQL, eles viajam como parâmetros (`?`). É isso que impede SQL injection.
  */
-export function listar({ categoria, usuarioId, limite = 50 }: FiltroListagem = {}): Anuncio[] {
+export function listar({ categoria, usuarioId, limite = 50 }: FiltroListagem = {}): AnuncioPublico[] {
   const condicoes: string[] = [];
   const valores: (string | number)[] = [];
 
@@ -82,25 +104,21 @@ export function listar({ categoria, usuarioId, limite = 50 }: FiltroListagem = {
   return linhas.map(paraAnuncio);
 }
 
-export function buscarPorId(id: string): Anuncio | null {
-  const linha = db.prepare('SELECT * FROM anuncios WHERE id = ?').get(id) as
-    | Record<string, unknown>
-    | undefined;
+export function buscarPorId(id: string): AnuncioPublico | null {
+  const linha = stmtBuscarPorId.get(id) as Record<string, unknown> | undefined;
 
   return linha ? paraAnuncio(linha) : null;
 }
 
-export function criar(dados: Omit<Anuncio, 'id' | 'criadoEm'>): Anuncio {
+export function criar(dados: Omit<Anuncio, 'id' | 'criadoEm'>): AnuncioPublico {
+  // O objeto interno carrega o usuarioId para poder gravá-lo no banco...
   const anuncio: Anuncio = {
     ...dados,
     id: crypto.randomUUID(),
     criadoEm: new Date().toISOString(),
   };
 
-  db.prepare(
-    `INSERT INTO anuncios (id, titulo, descricao, categoria, tipo, preco, imagemUrl, usuarioId, criadoEm)
-     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`,
-  ).run(
+  stmtInserir.run(
     anuncio.id,
     anuncio.titulo,
     anuncio.descricao,
@@ -112,7 +130,11 @@ export function criar(dados: Omit<Anuncio, 'id' | 'criadoEm'>): Anuncio {
     anuncio.criadoEm,
   );
 
-  return anuncio;
+  // ...mas o que volta para o cliente passa pela MESMA projeção das leituras.
+  // paraAnuncio só copia os campos públicos (nunca o usuarioId), então usá-la
+  // aqui garante uma regra única: nenhum caminho — criação ou leitura — devolve
+  // o usuarioId, mesmo que um campo sensível seja adicionado no futuro.
+  return paraAnuncio(anuncio);
 }
 
 /**
@@ -123,9 +145,7 @@ export function criar(dados: Omit<Anuncio, 'id' | 'criadoEm'>): Anuncio {
  * apagado — seja porque o id não existe, seja porque é de outro dono.
  */
 export function remover(id: string, usuarioId: string): boolean {
-  const resultado = db
-    .prepare('DELETE FROM anuncios WHERE id = ? AND usuarioId = ?')
-    .run(id, usuarioId);
+  const resultado = stmtRemover.run(id, usuarioId);
 
   return Number(resultado.changes) > 0;
 }
@@ -139,16 +159,7 @@ export type Estatisticas = {
 
 /** Números agregados para a vitrine da Landing Page. */
 export function estatisticas(): Estatisticas {
-  const linha = db
-    .prepare(
-      `SELECT
-         COUNT(*)                                        AS totalAnuncios,
-         SUM(CASE WHEN tipo = 'doacao' THEN 1 ELSE 0 END) AS totalDoacoes,
-         SUM(CASE WHEN tipo = 'venda'  THEN 1 ELSE 0 END) AS totalVendas,
-         COUNT(DISTINCT categoria)                        AS categoriasAtivas
-       FROM anuncios`,
-    )
-    .get() as Record<string, unknown>;
+  const linha = stmtEstatisticas.get() as Record<string, unknown>;
 
   return {
     totalAnuncios: Number(linha.totalAnuncios ?? 0),

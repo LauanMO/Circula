@@ -16,6 +16,8 @@ export type Categoria = (typeof CATEGORIAS)[number];
 
 export type Tipo = 'venda' | 'doacao';
 
+// O anúncio como a API devolve. Repare que NÃO há usuarioId: o servidor
+// nunca expõe quem é o dono, porque esse id é o que autoriza a exclusão.
 export type Anuncio = {
   id: string;
   titulo: string;
@@ -24,9 +26,13 @@ export type Anuncio = {
   tipo: Tipo;
   preco: number | null;
   imagemUrl: string;
-  usuarioId: string;
   criadoEm: string;
 };
+
+// O que o formulário envia para criar um anúncio: os campos do anúncio (sem
+// os que o servidor gera) mais o usuarioId, que só trafega nesse sentido —
+// do cliente para o servidor.
+export type NovoAnuncio = Omit<Anuncio, 'id' | 'criadoEm'> & { usuarioId: string };
 
 export type Estatisticas = {
   totalAnuncios: number;

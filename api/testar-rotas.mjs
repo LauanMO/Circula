@@ -28,6 +28,17 @@ async function checar(nome, esperado, requisicao) {
   return resposta;
 }
 
+// Além do status, às vezes precisamos afirmar algo sobre o corpo da resposta.
+function afirmar(nome, condicao) {
+  if (condicao) {
+    passou++;
+    console.log(`  ok   ${nome}`);
+  } else {
+    falhou++;
+    console.log(`  FALHA ${nome}`);
+  }
+}
+
 const json = (metodo, corpo) => ({
   method: metodo,
   headers: { 'Content-Type': 'application/json' },
@@ -65,6 +76,20 @@ const criado = await checar('POST /anuncios (venda válida)', 201, () =>
 );
 
 const anuncio = await criado.json();
+
+// Segurança: o usuarioId é o que autoriza a exclusão de um anúncio. Ele nunca
+// pode voltar numa resposta — se voltasse, qualquer um leria o id do dono na
+// listagem e apagaria anúncios alheios. Estas afirmações travam esse vazamento.
+afirmar('POST /anuncios não devolve usuarioId', !('usuarioId' in anuncio));
+
+const listaPublica = await (await fetch(`${BASE}/anuncios`)).json();
+afirmar(
+  'GET /anuncios não expõe usuarioId em nenhum item',
+  Array.isArray(listaPublica) && listaPublica.every((a) => !('usuarioId' in a)),
+);
+
+const porId = await (await fetch(`${BASE}/anuncios/${anuncio.id}`)).json();
+afirmar('GET /anuncios/:id não expõe usuarioId', !('usuarioId' in porId));
 
 const doacao = await checar('POST /anuncios (doação sem preço)', 201, () =>
   fetch(

@@ -6,15 +6,10 @@
 
 import { useCallback, useEffect, useState } from 'react';
 import { listarAnuncios } from './api.ts';
-import type { Anuncio, Categoria } from './tipos.ts';
+import type { FiltrosAnuncio } from './api.ts';
+import type { Anuncio } from './tipos.ts';
 
-type Opcoes = {
-  categoria?: Categoria;
-  usuarioId?: string;
-  limite?: number;
-};
-
-export function useAnuncios({ categoria, usuarioId, limite }: Opcoes = {}) {
+export function useAnuncios({ categoria, usuarioId, limite }: FiltrosAnuncio = {}) {
   const [anuncios, setAnuncios] = useState<Anuncio[]>([]);
   const [carregando, setCarregando] = useState(true);
   const [erro, setErro] = useState<string | null>(null);
