@@ -1,0 +1,9 @@
+{
+  "$schema": "https://openapi.vercel.sh/vercel.json",
+  "rewrites": [
+    {
+      "source": "/api/:caminho*",
+      "destination": "https://TROQUE-PELA-URL-DA-SUA-API.onrender.com/api/:caminho*"
+    }
+  ]
+}

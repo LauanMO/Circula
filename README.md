@@ -407,6 +407,29 @@ autenticação real (JWT), listada como bônus no edital.
 
 ## Deploy
 
-<!-- TODO Lauan: se fizer o deploy, cole os links aqui. É bônus no edital. -->
+A aplicação é publicada em duas partes, conforme a natureza de cada uma —
+exatamente a divisão sugerida pelo edital:
 
-_A preencher._
+- **Frontend → Vercel.** É um build estático do Vite, encaixe natural. O
+  arquivo `web/vercel.json` faz o Vercel repassar (`rewrite`) as chamadas de
+  `/api` para a API no Render. Assim o navegador enxerga tudo no mesmo domínio:
+  não há CORS, e o Service Worker continua cacheando as respostas da API para o
+  modo offline (o SW só intercepta requisições do mesmo domínio).
+- **API → Render.** É um servidor de longa duração com banco em arquivo, que
+  não se encaixa no modelo serverless do Vercel (sistema de arquivos efêmero). O
+  Render roda `npm start` num processo persistente. A versão do Node é fixada em
+  `api/.node-version` (24), porque o módulo `node:sqlite` exige Node ≥ 22.5.
+
+Variáveis de ambiente na API (Render):
+
+| Variável | Valor | Para quê |
+| --- | --- | --- |
+| `SEMENTE` | `1` | Popula o banco com anúncios de exemplo na primeira subida (só se estiver vazio), para a vitrine não aparecer vazia. |
+| `PORT` | _(automático)_ | O Render injeta; o servidor a lê de `process.env.PORT`. |
+
+Links da aplicação em produção:
+
+<!-- TODO Lauan: cole aqui as duas URLs depois do deploy. -->
+
+- **Frontend:** `https://...vercel.app`
+- **API:** `https://...onrender.com/api/health`

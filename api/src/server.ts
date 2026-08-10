@@ -7,6 +7,7 @@ import Fastify from 'fastify';
 import type { FastifyError, FastifyReply, FastifyRequest } from 'fastify';
 import cors from '@fastify/cors';
 import { rotasAnuncios } from './rotas.ts';
+import { semearSeVazio } from './seed.ts';
 
 const app = Fastify({ logger: false });
 
@@ -40,6 +41,13 @@ app.setErrorHandler((erro: FastifyError, _requisicao: FastifyRequest, resposta: 
 app.setNotFoundHandler((requisicao, resposta) => {
   resposta.status(404).send({ erro: `Rota não encontrada: ${requisicao.url}` });
 });
+
+// Em produção (Render) o banco nasce vazio a cada subida; com SEMENTE=1 ele é
+// populado com exemplos, mas só se estiver vazio. Localmente a variável não é
+// definida, então nada muda no desenvolvimento nem nos testes.
+if (process.env.SEMENTE === '1') {
+  semearSeVazio();
+}
 
 const porta = Number(process.env.PORT ?? 3333);
 
