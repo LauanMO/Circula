@@ -1,0 +1,62 @@
+# CI do Circula: valida a API e o PWA a cada push e pull request na main.
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  api:
+    name: API (Fastify + TypeScript)
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: api
+    env:
+      PORT: 3333
+      SEMENTE: '1'
+      BANCO: ci.db
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/setup-node@v5
+        with:
+          node-version-file: api/.node-version
+          cache: npm
+          cache-dependency-path: api/package-lock.json
+      - run: npm ci
+      - name: Checagem de tipos
+        run: npm run typecheck
+      - name: Teste de fumaça das rotas (testar-rotas.mjs)
+        run: |
+          npm start &
+          curl --retry 15 --retry-connrefused --retry-delay 1 -fsS http://localhost:3333/api/health
+          node testar-rotas.mjs
+
+  web:
+    name: Web (React + Vite PWA)
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: web
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/setup-node@v5
+        with:
+          node-version: 24
+          cache: npm
+          cache-dependency-path: web/package-lock.json
+      - run: npm ci
+      - name: Lint (oxlint)
+        run: npm run lint
+      - name: Build (tsc + vite)
+        run: npm run build

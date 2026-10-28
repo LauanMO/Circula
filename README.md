@@ -1,5 +1,7 @@
 # Circula — Marketplace de Economia Circular do Campus
 
+[![CI](https://github.com/LauanMO/Circula/actions/workflows/ci.yml/badge.svg)](https://github.com/LauanMO/Circula/actions/workflows/ci.yml)
+
 Plataforma de desapego universitário. Estudantes que estão saindo da faculdade
 anunciam o que não usam mais — livros, jalecos, calculadoras, componentes
 eletrônicos, móveis — por doação ou por um preço justo, e quem está chegando
